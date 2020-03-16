@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 sns.set()
 
 DATAPATH = os.path.abspath("data")
-STARTDATE = "1/22/20"
 
 def preprocess(dataframes):
     # Clean up data
@@ -65,6 +64,10 @@ def merge_datasets(dataframes):
     
     return final_dataset
 
+def get_total_cases_per_day(dataset):
+    # Returns the sum of cases per day
+    return dataset.groupby(["Date"], as_index=False)[["confirmed", "deaths", "recovered", "confirmed new", "deaths new", "recovered new"]].sum()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualisation of Covid-19 confirmed cases, deaths and recoveries.")
     parser.add_argument("--country", help="Desired country for which to display visualisations", default=None)
@@ -74,22 +77,36 @@ if __name__ == "__main__":
     # Read files
     dataframes = {}
     for csv_file in next(os.walk(DATAPATH))[2]:
+        if "dataset" in csv_file:
+            continue
         dataframes[csv_file.split('.')[0]] = pd.read_csv(os.path.join(DATAPATH, csv_file))
 
     dataframes = preprocess(dataframes)
     
     final_dataset = merge_datasets(dataframes)
-    final_dataset.to_csv("dataset.csv")
+    final_dataset.to_csv(os.path.join(DATAPATH, "dataset.csv"))
+    total_cases_per_day = get_total_cases_per_day(final_dataset)
+    figsize = (20,20)
+    ax = total_cases_per_day.plot(kind="line", x="Date", y="confirmed new", rot=45, figsize=figsize)
+    total_cases_per_day.plot(kind="line", x="Date", y="deaths new", ax=ax, rot=45, figsize=figsize)
+    total_cases_per_day.plot(kind="line", x="Date", y="recovered new", ax=ax, rot=45, figsize=figsize)
+    plt.title("Total New Cases per Day")
+    # plt.show()
     
-    uk = final_dataset.loc[final_dataset["Province/State"] == "United Kingdom"]
-    print(uk)
-    ax = uk.plot(kind="bar", x="Date", y="confirmed", rot=45)
+    # ax = total_cases_per_day.plot(kind="bar", x="Date", y="confirmed", rot=90, color='b', figsize=figsize)
+    # total_cases_per_day.plot(kind="bar", x="Date", y="deaths", ax=ax, rot=90, color='r', figsize=figsize)
+    # total_cases_per_day.plot(kind="bar", x="Date", y="recovered", ax=ax, rot=90, color='g', figsize=figsize)
+    # # ticks = ax.xaxis.get_ticklocs()
+    # # ticklabels = [l.get_text() for l in ax.xaxis.get_ticklabels()]
+    # # ax.xaxis.set_ticks(ticks[::3])
+    # # ax.xaxis.set_ticklabels(ticklabels[::3])
+    # plt.title("Total Cumulative Cases per Day")
+    # plt.show()
 
-    uk.plot(kind="line", x="Date", y="confirmed new", rot=45, ax=ax)
-    ticks = ax.xaxis.get_ticklocs()
-    ticklabels = [l.get_text() for l in ax.xaxis.get_ticklabels()]
-    ax.xaxis.set_ticks(ticks[::3])
-    ax.xaxis.set_ticklabels(ticklabels[::3])
-    # cyprus.plot(kind="bar", x="Date", y="deaths", rot=45)
-    # cyprus.plot(kind="bar", x="Date", y="recovered", rot=45)
+    total_row = total_cases_per_day.iloc[total_cases_per_day.index[-1]]
+    df = pd.DataFrame({"num": [total_row["confirmed"] - (total_row["recovered"] + total_row["deaths"]), total_row["deaths"], total_row["recovered"]]},
+                        index=["infected", "deaths", "recovered"])
+    print(df.plot.pie(y="num"))
     plt.show()
+    print(total_row)
+    print(sum([total_row["confirmed"] - (total_row["recovered"] + total_row["deaths"]), total_row["deaths"], total_row["recovered"]]))
