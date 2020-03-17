@@ -106,7 +106,6 @@ if __name__ == "__main__":
     total_row = total_cases_per_day.iloc[total_cases_per_day.index[-1]]
     df = pd.DataFrame({"num": [total_row["confirmed"] - (total_row["recovered"] + total_row["deaths"]), total_row["deaths"], total_row["recovered"]]},
                         index=["infected", "deaths", "recovered"])
-    print(df.plot.pie(y="num"))
+    df.plot.pie(y="num")
     plt.show()
-    print(total_row)
-    print(sum([total_row["confirmed"] - (total_row["recovered"] + total_row["deaths"]), total_row["deaths"], total_row["recovered"]]))
+    
