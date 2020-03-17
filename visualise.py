@@ -64,8 +64,10 @@ def merge_datasets(dataframes):
     
     return final_dataset
 
-def get_total_cases_per_day(dataset):
+def get_total_cases_per_day(dataset, country=None):
     # Returns the sum of cases per day
+    if country is not None:
+        dataset = dataset.loc[dataset["Country/Region"] == country]
     return dataset.groupby(["Date"], as_index=False)[["confirmed", "deaths", "recovered", "confirmed new", "deaths new", "recovered new"]].sum()
 
 if __name__ == "__main__":
@@ -85,27 +87,58 @@ if __name__ == "__main__":
     
     final_dataset = merge_datasets(dataframes)
     final_dataset.to_csv(os.path.join(DATAPATH, "dataset.csv"))
+    
     total_cases_per_day = get_total_cases_per_day(final_dataset)
+    
     figsize = (20,20)
+    # Show a line plot of new cases per day
     ax = total_cases_per_day.plot(kind="line", x="Date", y="confirmed new", rot=45, figsize=figsize)
     total_cases_per_day.plot(kind="line", x="Date", y="deaths new", ax=ax, rot=45, figsize=figsize)
     total_cases_per_day.plot(kind="line", x="Date", y="recovered new", ax=ax, rot=45, figsize=figsize)
     plt.title("Total New Cases per Day")
-    # plt.show()
-    
-    # ax = total_cases_per_day.plot(kind="bar", x="Date", y="confirmed", rot=90, color='b', figsize=figsize)
-    # total_cases_per_day.plot(kind="bar", x="Date", y="deaths", ax=ax, rot=90, color='r', figsize=figsize)
-    # total_cases_per_day.plot(kind="bar", x="Date", y="recovered", ax=ax, rot=90, color='g', figsize=figsize)
-    # # ticks = ax.xaxis.get_ticklocs()
-    # # ticklabels = [l.get_text() for l in ax.xaxis.get_ticklabels()]
-    # # ax.xaxis.set_ticks(ticks[::3])
-    # # ax.xaxis.set_ticklabels(ticklabels[::3])
-    # plt.title("Total Cumulative Cases per Day")
-    # plt.show()
-
-    total_row = total_cases_per_day.iloc[total_cases_per_day.index[-1]]
-    df = pd.DataFrame({"num": [total_row["confirmed"] - (total_row["recovered"] + total_row["deaths"]), total_row["deaths"], total_row["recovered"]]},
-                        index=["infected", "deaths", "recovered"])
-    df.plot.pie(y="num")
+    plt.ylabel("New Cases")
     plt.show()
     
+    # Show a bar plot of cumulative cases per day
+    ax = total_cases_per_day.plot(kind="bar", x="Date", y="confirmed", rot=90, color='b', figsize=figsize)
+    total_cases_per_day.plot(kind="bar", x="Date", y="deaths", ax=ax, rot=90, color='r', figsize=figsize)
+    total_cases_per_day.plot(kind="bar", x="Date", y="recovered", ax=ax, rot=90, color='g', figsize=figsize)
+    # ticks = ax.xaxis.get_ticklocs()
+    # ticklabels = [l.get_text() for l in ax.xaxis.get_ticklabels()]
+    # ax.xaxis.set_ticks(ticks[::3])
+    # ax.xaxis.set_ticklabels(ticklabels[::3])
+    plt.title("Total Cumulative Cases per Day")
+    plt.ylabel("Cumulative Cases")
+    plt.show()
+
+    # Create a df for holding information for a pie plot
+    total_row = total_cases_per_day.iloc[total_cases_per_day.index[-1]]
+    pie_data = pd.DataFrame({"num": [total_row["confirmed"] - (total_row["recovered"] + total_row["deaths"]), total_row["deaths"], total_row["recovered"]]},
+                        index=["infected", "deaths", "recovered"])
+    pie_data.plot.pie(y="num", autopct="%1.1f%%")
+    plt.show()
+   
+    china = get_total_cases_per_day(final_dataset, country="China")
+    ax = china.plot(kind="line", x="Date", y="confirmed", rot=45, figsize=figsize)
+    china.plot(kind="line", x="Date", y="deaths", ax=ax, rot=45, figsize=figsize)
+    china.plot(kind="line", x="Date", y="recovered", ax=ax, rot=45, figsize=figsize)
+    plt.title("China Cumulative Cases")
+    plt.ylabel("Cumulative Cases")
+    plt.show()
+
+    cyprus = get_total_cases_per_day(final_dataset, country="Cyprus")
+
+    ax = cyprus.plot(kind="line", x="Date", y="confirmed", rot=45, figsize=figsize)
+    cyprus.plot(kind="line", x="Date", y="deaths", ax=ax, rot=45, figsize=figsize)
+    cyprus.plot(kind="line", x="Date", y="recovered", ax=ax, rot=45, figsize=figsize)
+    plt.title("Cyprus Cumulative Cases")
+    plt.ylabel("Cumulative Cases")
+    plt.show()
+
+    uk = get_total_cases_per_day(final_dataset, country="United Kingdom")
+    ax = uk.plot(kind="line", x="Date", y="confirmed", rot=45, figsize=figsize)
+    uk.plot(kind="line", x="Date", y="deaths", ax=ax, rot=45, figsize=figsize)
+    uk.plot(kind="line", x="Date", y="recovered", ax=ax, rot=45, figsize=figsize)
+    plt.title("UK Cumulative Cases")
+    plt.ylabel("Cumulative Cases")
+    plt.show()
